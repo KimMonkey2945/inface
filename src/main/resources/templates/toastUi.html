@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:fragment="HeaderFragment">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+<script>
+    $(document).ready(function () {
+
+        let uploadedFiles = [];
+        const editor = new toastui.Editor({
+            el: document.querySelector('#content'),
+            height: '500px',
+            initialEditType: 'wysiwyg',
+            initialValue: '내용을 입력해 주세요.',
+            previewStyle: 'vertical',
+            hooks: {
+                addImageBlobHook : (file, callback)=>{
+                    let formData = new FormData();
+                    formData.append("file", file);
+
+                    $.ajax({
+                       url:"/upload/img",
+                       method: "POST",
+                       data: formData,
+                       processData: false, // FormData 전송을 위해 false 설정
+                       contentType: false, // 자동으로 Content-Type 헤더 설정
+                       success: function(map){
+                            let imgUrl = map.url;
+                            callback(imgUrl, "");
+                            uploadedFiles.push(imgUrl);
+                       },
+                       error: function(){
+                         console.log("error");
+                       },
+                    });
+
+                }
+            }
+        });
+
+
+        $(".confirm").on("click", function(){
+            const content = editor.getHTML();
+            console.log("Editor Content:", content);
+            console.log("Uploaded Files:", uploadedFiles);
+        });
+
+        $(".cancel").on("click", function(){
+            $.ajax({
+                url:"/cancel/img",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ files: uploadedFiles }),
+                success: function(){
+                },
+                error: function(){
+                    console.log("error");
+                },
+            });
+        });
+
+
+
+    });
+</script>
+
+<h1>toastUi Test</h1>
+
+
+<form th:action method="post" enctype="multipart/form-data">
+    <div id="content"></div>
+    <input type="button" class="confirm" value="confirm">
+    <input type="button" class="cancel" value="cancel">
+</form>
+</body>
+</html>
